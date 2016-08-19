@@ -33,17 +33,38 @@ libgpgcrypt:
 	make -j$(CORES) && \
 	make install
 
-package:
-	cd /tmp/libgcrypt-$(VERSION) && \
-	checkinstall \
-	    -D \
-	    --fstrans \
-	    -pkgrelease "$(RELEASEVER)"-"$(RELEASE)" \
-	    -pkgrelease "$(RELEASEVER)"~"$(RELEASE)" \
-	    -pkgname "libgcrypt" \
-	    -pkglicense GPLv3 \
-	    -pkggroup GPG \
-	    -maintainer charlesportwoodii@ethreal.net \
-	    -provides "libgcrypt-$(VERSION)" \
-	    -pakdir /tmp \
-	    -y
+fpm_debian:
+	echo "Packaging libgcrypt for Debian"
+
+	cd /tmp/libgcrypt-$(VERSION) && make install DESTDIR=/tmp/libgcrypt-$(VERSION)-install
+
+	fpm -s dir \
+		-t deb \
+		-n libgcrypt \
+		-v $(VERSION)-$(RELEASEVER)~$(shell lsb_release --codename | cut -f2) \
+		-C /tmp/libgcrypt-$(VERSION)-install \
+		-p libgcrypt_$(VERSION)-$(RELEASEVER)~$(shell lsb_release --codename | cut -f2)_$(shell arch).deb \
+		-m "charlesportwoodii@erianna.com" \
+		--license "GPLv3" \
+		--url https://github.com/charlesportwoodii/libgcrypt-build \
+		--description "libgcrypt" \
+		--deb-systemd-restart-after-upgrade
+
+fpm_rpm:
+	echo "Packaging libgcrypt for RPM"
+
+	cd /tmp/libgcrypt-$(VERSION) && make install DESTDIR=/tmp/libgcrypt-$(VERSION)-install
+
+	fpm -s dir \
+		-t rpm \
+		-n libgcrypt \
+		-v $(VERSION)_$(RELEASEVER) \
+		-C /tmp/libgcrypt-$(VERSION)-install \
+		-p libgcrypt_$(VERSION)-$(RELEASEVER)_$(shell arch).rpm \
+		-m "charlesportwoodii@erianna.com" \
+		--license "GPLv3" \
+		--url https://github.com/charlesportwoodii/libgcrypt-build \
+		--description "libgcrypt" \
+		--vendor "Charles R. Portwood II" \
+		--rpm-digest sha384 \
+		--rpm-compression gzip
